@@ -1,0 +1,280 @@
+//MEMBER SHUANGRUI LIU
+entity ChatBox {
+}
+
+entity Message {
+    content String required
+    postTime Instant required
+}
+
+entity UserProfile {
+    anonymous Boolean required
+    name String
+    emailAddr String required
+    role Role required
+    id UUID required unique
+}
+
+//MEMBER: SAI
+entity Slide {
+    img ImageBlob
+    path String required
+    slideNo Long required
+    id String required
+}
+
+entity SlideShow {
+    showName String
+    uploaded LocalDate
+}
+
+enum Role {
+    TEACHER(Teacher)
+    STUDENT(Student)
+    ADMIN(Administrator)
+    GUEST(Guest)
+    UNKNOWN(Other)
+}
+
+entity Recording {
+    status Boolean
+    ignorePaused Boolean
+    id String required
+    title String
+}
+
+entity Lecturer {
+    zoomID String
+    averageRating Long
+}
+
+entity QuizAnswer {
+    optionNumber Long
+    optionText String
+}
+
+entity QuizQuestion {
+    question String
+}
+
+entity Quiz {
+    title String
+    id UUID required unique
+}
+
+entity Survey {
+    title String
+    id UUID required unique
+    question String
+}
+
+entity SurveyResponse {
+    id UUID required unique
+    text String
+}
+
+relationship ManyToOne {
+    Slide{slides} to SlideShow
+    Message{msg} to ChatBox
+    SlideShow{author} to UserProfile
+    Recording{owner} to Lecturer
+    Quiz{author} to Lecturer
+    QuizQuestion to Quiz{questions}
+    QuizAnswer to QuizQuestion{responses}
+    Survey{author} to Lecturer
+    SurveyResponse to Survey{responses}
+    Message{author} to UserProfile
+}
+
+relationship OneToOne {
+    ChatBox{chat} to Recording
+}
+
+paginate Survey, Quiz, SlideShow with pagination
+paginate SurveyResponse, Message with infinite-scroll
+
+
+//MEMBER: HTS
+entity ReviewComment{
+    commentID String required unique
+    content String
+    timestamp ZonedDateTime
+    isPositive Boolean
+    // howManyComments String
+}
+
+entity Course {
+    title String
+    moduleLead String
+    id Long unique
+}
+
+relationship OneToMany {
+    UserProfile{reviews} to ReviewComment{author},
+}
+
+//MEMBER: HWZ
+entity Lecture {
+    lectureName String required,
+    lectureYear Long required,
+    lectureTopic String required,
+    week Long required, // week 250 is main
+    lectureID UUID required unique
+}
+
+entity OverallCourseRating {
+    score Long,
+    comment String
+}
+
+entity LecturerProfile {
+    averageRating Long required,
+    topAttributes Attributes
+}
+
+entity WeeklyFeedback {
+    comments String
+    id UUID required unique
+}
+
+entity WeeklyRating {
+    score Long
+    comments String
+}
+
+enum Attributes {
+    OVERALL(Overall),
+    SUBJECT_KNOWLEDGE(SubjectKnowledge),
+    INTERPERSONAL_SKILLS(InterpersonalSkills),
+    CANVAS_ORGANISATION(CanvasOrganisation),
+    LECTURE_PREPAREDNESS(LecturePreparedness),
+    PROFESSIONALISM(Professionalism),
+    LECTURE_ENGAGEMENT(LectureEngagement),
+    LECTURER_AVAILABILITY(LecturerAvailability),
+    ASSESSMENT_CLARITY(AssessmentClarity)
+}
+
+relationship OneToMany {
+    Lecture{weeklyRatings} to WeeklyRating{lecture}
+    Lecture{weeklyFeedback} to WeeklyFeedback{lecture}
+}
+
+relationship ManyToMany {
+    Course{lecturers} to Lecturer{courses}
+}
+
+relationship ManyToOne {
+    Lecture{Lecturer} to Lecturer{lectures}
+    OverallCourseRating{course} to Course{overallRatings}
+    Lecture{course} to Course{lectures}
+    Lecture{lecturerProfiles} to LecturerProfile{lectures}
+}
+
+
+paginate OverallCourseRating, WeeklyFeedback, Lecturer with infinite-scroll
+paginate Lecture, LecturerProfile with pagination
+
+
+//MEMBER: ZRW
+entity DimensionalRating {
+    dimension String
+    rating Long
+}
+
+entity StudentFeedback {
+    time Instant
+}
+
+entity Issue {
+    slideShow String
+    slide Long
+    problemDesc String
+}
+
+relationship OneToMany {
+    UserProfile{givenFedback} to StudentFeedback{author}
+    StudentFeedback{issues} to Issue{feedback}
+}
+
+// To handle packaging feedback together
+relationship ManyToOne {
+    DimensionalRating{studentFeedback} to StudentFeedback{dimensionalRatings}
+    StudentFeedback{lecture} to Lecture{feedback}
+}
+
+relationship OneToOne {
+    StudentFeedback{comment} to WeeklyFeedback{studentFeedback}
+    StudentFeedback{overallRating} to WeeklyRating{studentFeedback}
+}
+
+paginate Issue, StudentFeedback with pagination
+paginate DimensionalRating with infinite-scroll
+
+//MEMBER: ZLX
+enum RatingAttributes {
+    ENGAGEMENT(Engaging)
+    SUBJECT_KNOWLEDGE(Knowledgeable)
+    INTERPERSONAL_SKILLS(InterpersonalSkills)
+    CANVAS_ORGANISATION(CanvasOrganisation)
+    LECTURE_PREPAREDNESS(LecturePreparedness)
+    PROFESSIONALISM(Professionalism)
+    RESPONSIVENESS(Responsiveness)
+}
+
+entity Rating {
+    sliderValue Long
+    attribute RatingAttributes
+}
+
+paginate Rating with infinite-scroll
+
+//MEMBER: WKT part
+entity Edit {
+    message String
+    editedImage ImageBlob
+    uploadTime Instant
+    id UUID unique required
+}
+
+entity DrawingTool {
+  color String required,
+  thickness Integer required,
+  eraserSize Integer required
+}
+relationship OneToOne{
+DrawingTool{color} to Edit{message}
+}
+relationship ManyToOne {
+    Edit{slide} to Slide{edits}
+    Edit{author} to UserProfile{slideEdits}
+}
+
+entity EditedPDF {
+  filePath String required,
+  size Integer required,
+  lastEditedAt Instant required
+}
+
+relationship OneToOne{
+Edit{slide} to EditedPDF{filepath}
+}
+
+entity ErrorReport {
+  description Text required,
+  reportedAt Instant required,
+  resolved Boolean required
+}
+
+relationship OneToOne{
+	Slide{img} to ErrorReport{description}
+}
+
+relationship OneToOne {
+  TextInput to ErrorReport{textInput}
+}
+
+entity TextInput {
+  content Text required
+}
+
+paginate Edit with pagination
